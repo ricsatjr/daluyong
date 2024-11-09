@@ -22,15 +22,15 @@ jobs:
 
       - name: Get latest image/PDF from URL 1
         run: |
-          python get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/>" -o latest_tcb.txt
+          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/>" -o latest_tcb.txt
 
       - name: Get latest image/PDF from URL 2
         run: |
-          python get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/>" -o latest_wa.txt
+          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/>" -o latest_wa.txt
 
       - name: Get latest image/PDF from URL 3
         run: |
-          python get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/>" -o latest_tcthreat.txt
+          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/>" -o latest_tcthreat.txt
 
       - name: Update Wiki page
         uses: actions/github-script@v6
