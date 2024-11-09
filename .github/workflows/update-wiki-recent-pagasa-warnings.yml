@@ -1,10 +1,8 @@
 name: Update Wiki with Latest Pagasa Info
-
 on:
-  workflow_dispatch: # Trigger manually
+  workflow_dispatch:
   #schedule:
-    #- cron: '0 2,5,8,11,14,17,20,23 * * *' # Runs every 2, 5, 8, 11, 2, 5, 8, 11 PM (Philippine Standard Time)
-    #- cron: '0,5,10,15,20,25,30,35,40,45,50,55 * 14-14 * *'
+    #- cron: '0 2,5,8,11,14,17,20,23 * **'
    
 jobs:
   update_wiki:
@@ -12,40 +10,47 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x' # Choose a suitable Python version
-
+          python-version: '3.x'
       - name: Install dependencies
         run: |
           pip install requests beautifulsoup4
-
       - name: Get latest image/PDF from URL 1
         run: |
           python codes/get_latest_image_pdf.py -u "https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/" -o codes/latest_tcb.txt
-
       - name: Get latest image/PDF from URL 2
         run: |
           python codes/get_latest_image_pdf.py -u "https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/" -o codes/latest_wa.txt
-
       - name: Get latest image/PDF from URL 3
         run: |
           python codes/get_latest_image_pdf.py -u "https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/" -o codes/latest_tcthreat.txt
-
       - name: Update Wiki page
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const wikiPage = context.github.repos.getWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Pagasa Info' });
-            const latestMedia1 = require('./codes/latest_tcb.txt').toString();
-            const latestMedia2 = require('./codes/latest_wa.txt').toString();
-            const latestMedia3 = require('./codes/latest_tcthreat.txt').toString();
+            const fs = require('fs');
+            const tcb = fs.readFileSync('./codes/latest_tcb.txt', 'utf8');
+            const wa = fs.readFileSync('./codes/latest_wa.txt', 'utf8');
+            const tcthreat = fs.readFileSync('./codes/latest_tcthreat.txt', 'utf8');
+            
             const content = `## Latest Pagasa Info
-
-**From URL 1:** ${latestMedia1}
-**From URL 2:** ${latestMedia2}
-**From URL 3:** ${latestMedia3}`;
-            const updateWiki = context.github.repos.updateWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Pagasa Info', content: content });
+            
+            **From URL 1:** ${tcb}
+            **From URL 2:** ${wa}
+            **From URL 3:** ${tcthreat}`;
+            
+            await github.rest.repos.createOrUpdatePageContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: 'Latest-Pagasa-Info.md',
+              message: 'Update wiki content',
+              content: Buffer.from(content).toString('base64'),
+              committer: {
+                name: 'GitHub Actions',
+                email: 'actions@github.com'
+              }
+            });
