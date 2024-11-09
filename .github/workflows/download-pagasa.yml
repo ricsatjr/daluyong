@@ -1,8 +1,8 @@
 name: Download Latest PAGASA Files
 on:
-  workflow_dispatch:  # Only manual trigger
+  workflow_dispatch:  # Manual trigger
   schedule:
-    - cron: '20 0,3,6,9,12,15,18,21 * * *'
+    - cron: '20 18,21,0,3,6,12,15 * * *'
 
 jobs:
   download:
@@ -34,24 +34,13 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           
-      - name: Stage new files
+      - name: Commit and push if changed
         run: |
           git add codes/latest_*
-          
-      - name: Stash changes
-        run: |
-          git stash
-          
-      - name: Pull changes
-        run: |
-          git pull origin main --rebase
-          
-      - name: Apply stashed changes
-        run: |
-          git stash pop
-          
-      - name: Commit and push
-        run: |
-          git add codes/latest_*
-          git commit -m "Update PAGASA files" || echo "No changes to commit"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git pull origin main --rebase
+            git commit -m "Update PAGASA files"
+            git push
+          fi
