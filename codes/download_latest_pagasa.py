@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import os
-from urllib.parse import urljoin
+from urllib.parse import urljoin, unquote
 from datetime import datetime
 
 def parse_date(date_str):
@@ -16,24 +16,35 @@ def get_latest_file(url):
         response = requests.get(url)
         response.raise_for_status()
         
-        # Split the response text into lines
-        lines = response.text.split('\n')
+        # Get raw text and remove <pre> tags
+        raw_text = response.text.replace('<pre>', '').replace('</pre>', '')
         
-        # Process each line that contains a file link
+        # Split into lines
+        lines = [line for line in raw_text.split('\n') if line.strip()]
+        
         files_with_dates = []
         for line in lines:
+            # Skip parent directory link
+            if '../' in line:
+                continue
+                
+            # Check if line contains a file link
             if '<a href="' in line and ('pdf' in line.lower() or 'png' in line.lower()):
-                # Extract filename and date from the line
-                parts = line.split('">')
-                if len(parts) >= 2:
-                    filename = parts[1].split('</a>')[0]
-                    # Extract date from the remaining part
-                    date_parts = parts[1].split('</a>')[1].strip().split('    ')
-                    if date_parts:
-                        date_str = date_parts[0].strip()
+                # Extract the href and split the remaining content
+                href_end = line.find('</a>')
+                if href_end != -1:
+                    # Get the remainder of the line after the </a> tag
+                    remainder = line[href_end + 4:].strip()
+                    # Split by multiple spaces to get date and size
+                    parts = [p for p in remainder.split('    ') if p.strip()]
+                    if parts:
+                        date_str = parts[0].strip()
                         if date_str:
                             date = parse_date(date_str)
                             if date:
+                                # Extract filename from href
+                                href_start = line.find('href="') + 6
+                                filename = line[href_start:line.find('"', href_start)]
                                 files_with_dates.append((filename, date))
                                 print(f"Found file: {filename} with date: {date}")
 
@@ -64,7 +75,7 @@ def download_latest_file(url, save_folder, file_prefix):
         response.raise_for_status()
         
         # Get the extension from the original file
-        extension = os.path.splitext(latest_file)[1]
+        extension = os.path.splitext(unquote(latest_file))[1]
         filename = f"{file_prefix}{extension}"
         filepath = os.path.join(save_folder, filename)
         
