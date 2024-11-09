@@ -3,7 +3,8 @@ name: Update Wiki with Latest Pagasa Info
 on:
   schedule:
     #- cron: '0 2,5,8,11,14,17,20,23 * * *' # Runs every 2, 5, 8, 11, 2, 5, 8, 11 PM (Philippine Standard Time)
-    - cron: '0,5,10,15,20,25,30,35,40,45,50,55 * 14-14 * *' 
+    #- cron: '0,5,10,15,20,25,30,35,40,45,50,55 * 14-14 * *'
+    workflow_dispatch: # Trigger manually
 jobs:
   update_wiki:
     runs-on: ubuntu-latest
