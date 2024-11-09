@@ -22,15 +22,15 @@ jobs:
 
       - name: Get latest image/PDF from URL 1
         run: |
-          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/>" -o latest_tcb.txt
+          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/>" -o codes/latest_tcb.txt
 
       - name: Get latest image/PDF from URL 2
         run: |
-          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/>" -o latest_wa.txt
+          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/>" -o codes/latest_wa.txt
 
       - name: Get latest image/PDF from URL 3
         run: |
-          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/>" -o latest_tcthreat.txt
+          python codes/get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/>" -o codes/latest_tcthreat.txt
 
       - name: Update Wiki page
         uses: actions/github-script@v6
@@ -38,9 +38,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const wikiPage = context.github.repos.getWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Pagasa Info' });
-            const latestMedia1 = require('./latest_media_1.txt').toString();
-            const latestMedia2 = require('./latest_media_2.txt').toString();
-            const latestMedia3 = require('./latest_media_3.txt').toString();
+            const latestMedia1 = require('./codes/latest_tcb.txt').toString();
+            const latestMedia2 = require('./codes/latest_wa.txt').toString();
+            const latestMedia3 = require('./codes/latest_tcthreat.txt').toString();
             const content = `## Latest Pagasa Info
 
 **From URL 1:** ${latestMedia1}
