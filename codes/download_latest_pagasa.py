@@ -15,30 +15,27 @@ def get_latest_file(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Get all links and their dates
+        # Split the response text into lines
+        lines = response.text.split('\n')
+        
+        # Process each line that contains a file link
         files_with_dates = []
-        
-        # Process all link elements
-        for link in soup.find_all('a'):
-            href = link.get('href')
-            # Skip parent directory link
-            if href == "../":
-                continue
-                
-            # Get the file and date from the text that follows the link
-            if href and (href.endswith('.pdf') or href.endswith('.png')):
-                # Get the text line containing this link
-                line_text = link.parent.get_text()
-                parts = line_text.split()
+        for line in lines:
+            if '<a href="' in line and ('pdf' in line.lower() or 'png' in line.lower()):
+                # Extract filename and date from the line
+                parts = line.split('">')
                 if len(parts) >= 2:
-                    # Date and time are typically the last parts before the file size
-                    date_str = f"{parts[-3]} {parts[-2]}"
-                    date = parse_date(date_str)
-                    if date:
-                        files_with_dates.append((href, date))
-                        print(f"Found file: {href} with date: {date}")
+                    filename = parts[1].split('</a>')[0]
+                    # Extract date from the remaining part
+                    date_parts = parts[1].split('</a>')[1].strip().split('    ')
+                    if date_parts:
+                        date_str = date_parts[0].strip()
+                        if date_str:
+                            date = parse_date(date_str)
+                            if date:
+                                files_with_dates.append((filename, date))
+                                print(f"Found file: {filename} with date: {date}")
 
         if not files_with_dates:
             print("No files with valid dates found")
