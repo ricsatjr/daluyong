@@ -1,0 +1,37 @@
+name: Update Wiki with Latest Image/PDF
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+
+jobs:
+  update_wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x' # Choose a suitable Python version
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Get latest image/PDF
+        run: |
+          python get_latest_image_pdf.py -u "<YOUR_TARGET_URL>" -o latest_media.txt
+
+      - name: Update Wiki page
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const wikiPage = context.github.repos.getWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Media' });
+            const latestMedia = require('./latest_media.txt').toString();
+            const content = `## Latest Media
+
+${latestMedia}`;
+            const updateWiki = context.github.repos.updateWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Media', content: content });
