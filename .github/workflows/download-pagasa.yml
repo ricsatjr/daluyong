@@ -1,6 +1,8 @@
 name: Download Latest PAGASA Files
 on:
   workflow_dispatch:  # Only manual trigger
+  schedule:
+    - cron: '20 0,3,6,9,12,15,18,21 * * *'
 
 jobs:
   download:
