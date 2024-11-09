@@ -10,47 +10,45 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+      
       - name: Install dependencies
         run: |
           pip install requests beautifulsoup4
+      
       - name: Get latest image/PDF from URL 1
         run: |
           python codes/get_latest_image_pdf.py -u "https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/" -o codes/latest_tcb.txt
+      
       - name: Get latest image/PDF from URL 2
         run: |
           python codes/get_latest_image_pdf.py -u "https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/" -o codes/latest_wa.txt
+      
       - name: Get latest image/PDF from URL 3
         run: |
           python codes/get_latest_image_pdf.py -u "https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/" -o codes/latest_tcthreat.txt
+      
       - name: Update Wiki page
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const tcb = fs.readFileSync('./codes/latest_tcb.txt', 'utf8');
             const wa = fs.readFileSync('./codes/latest_wa.txt', 'utf8');
             const tcthreat = fs.readFileSync('./codes/latest_tcthreat.txt', 'utf8');
             
-            const content = `## Latest Pagasa Info
+            const content = `## Latest Pagasa Info\n\n**From URL 1:** ${tcb}\n**From URL 2:** ${wa}\n**From URL 3:** ${tcthreat}`;
             
-            **From URL 1:** ${tcb}
-            **From URL 2:** ${wa}
-            **From URL 3:** ${tcthreat}`;
-            
-            await github.rest.repos.createOrUpdatePageContent({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              path: 'Latest-Pagasa-Info.md',
-              message: 'Update wiki content',
-              content: Buffer.from(content).toString('base64'),
-              committer: {
-                name: 'GitHub Actions',
-                email: 'actions@github.com'
+            await github.rest.gists.update({
+              wiki: {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                page: 'Latest Pagasa Info',
+                content: content
               }
             });
