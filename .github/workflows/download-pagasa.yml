@@ -26,18 +26,29 @@ jobs:
         run: |
           python codes/download_latest_pagasa.py
 
-      - name: Git Pull and Reset
+      - name: Configure Git
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git pull origin main --rebase
+          
+      - name: Stage new files
+        run: |
           git add codes/latest_*
           
-      - name: Add and Commit
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: 'codes/latest_*'
-          message: 'Update PAGASA files'
-          default_author: github_actions
-          push: true
-          force: true
+      - name: Stash changes
+        run: |
+          git stash
+          
+      - name: Pull changes
+        run: |
+          git pull origin main --rebase
+          
+      - name: Apply stashed changes
+        run: |
+          git stash pop
+          
+      - name: Commit and push
+        run: |
+          git add codes/latest_*
+          git commit -m "Update PAGASA files" || echo "No changes to commit"
+          git push
