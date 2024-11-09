@@ -43,7 +43,7 @@ jobs:
             const latestMedia3 = require('./codes/latest_tcthreat.txt').toString();
             const content = `## Latest Pagasa Info
 
-**From URL 1:** ${latestMedia1}
-**From URL 2:** ${latestMedia2}
-**From URL 3:** ${latestMedia3}`;
+**From URL 1:** $${latestMedia1}
+**From URL 2:** $${latestMedia2}
+**From URL 3:** $${latestMedia3}`;
             const updateWiki = context.github.repos.updateWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Pagasa Info', content: content });
