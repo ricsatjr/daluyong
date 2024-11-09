@@ -11,7 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch all history
+          fetch-depth: 0
         
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -25,6 +25,13 @@ jobs:
       - name: Run download script
         run: |
           python codes/download_latest_pagasa.py
+
+      - name: Git Pull and Reset
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git pull origin main --rebase
+          git add codes/latest_*
           
       - name: Add and Commit
         uses: EndBug/add-and-commit@v9
@@ -32,4 +39,5 @@ jobs:
           add: 'codes/latest_*'
           message: 'Update PAGASA files'
           default_author: github_actions
-          pull: '--rebase --autostash'
+          push: true
+          force: true
