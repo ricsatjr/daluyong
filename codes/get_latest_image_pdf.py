@@ -1,3 +1,4 @@
+# get_latest_image_pdf.py (in root/codes directory)
 import requests
 from bs4 import BeautifulSoup
 import argparse
