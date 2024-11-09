@@ -38,17 +38,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const tcb = fs.readFileSync('./codes/latest_tcb.txt', 'utf8');
-            const wa = fs.readFileSync('./codes/latest_wa.txt', 'utf8');
-            const tcthreat = fs.readFileSync('./codes/latest_tcthreat.txt', 'utf8');
-            
-            const content = `## Latest Pagasa Info\n\n**From URL 1:** ${tcb}\n**From URL 2:** ${wa}\n**From URL 3:** ${tcthreat}`;
-            
-            await github.rest.gists.update({
-              wiki: {
+            try {
+              const tcb = fs.readFileSync('./codes/latest_tcb.txt', 'utf8');
+              const wa = fs.readFileSync('./codes/latest_wa.txt', 'utf8');
+              const tcthreat = fs.readFileSync('./codes/latest_tcthreat.txt', 'utf8');
+              
+              const content = `## Latest Pagasa Info\n\n**From URL 1:** ${tcb}\n**From URL 2:** ${wa}\n**From URL 3:** ${tcthreat}`;
+              
+              await github.rest.repos.updateWikiPage({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 page: 'Latest Pagasa Info',
-                content: content
-              }
-            });
+                content: content,
+                message: 'Update wiki content via GitHub Actions'
+              });
+            } catch (error) {
+              console.error('Error:', error);
+              core.setFailed(error.message);
+            }
