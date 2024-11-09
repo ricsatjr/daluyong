@@ -2,34 +2,59 @@ import requests
 from bs4 import BeautifulSoup
 import os
 from urllib.parse import urljoin
+from datetime import datetime
+import re
 
-def download_latest_file(url, save_folder, file_prefix):
+def get_latest_file(url):
     try:
-        # Get the webpage content
         response = requests.get(url)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Find all links that might be images or PDFs
-        media_links = []
         
-        # Check img tags with src
-        for img in soup.find_all('img', src=True):
-            if img['src'].lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.pdf')):
-                media_links.append(img['src'])
-        
-        # Check a tags with href
-        for link in soup.find_all('a', href=True):
-            if link['href'].lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.pdf')):
-                media_links.append(link['href'])
-
-        if not media_links:
-            print(f"No media files found for {url}")
+        # Find the table that contains the files
+        table = soup.find('table')
+        if not table:
+            print(f"No table found in {url}")
             return None
-
-        # Get the latest file (assuming filenames have date/time info)
-        latest_file_url = urljoin(url, sorted(media_links)[-1])
+            
+        latest_file = None
+        latest_date = None
         
+        # Look through table rows
+        for row in table.find_all('tr')[1:]:  # Skip header row
+            cols = row.find_all('td')
+            if len(cols) >= 3:  # Ensure row has enough columns
+                link_element = cols[0].find('a') or cols[0].find('img')
+                if link_element:
+                    file_url = link_element.get('href') or link_element.get('src')
+                    if file_url and file_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.pdf')):
+                        # Get the date from the modified column
+                        date_str = cols[2].get_text().strip()
+                        try:
+                            # Parse the date (adjust format as needed)
+                            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                            if not latest_date or date > latest_date:
+                                latest_date = date
+                                latest_file = file_url
+                        except ValueError as e:
+                            print(f"Could not parse date: {date_str}")
+                            continue
+        
+        if latest_file:
+            return urljoin(url, latest_file)
+        return None
+        
+    except Exception as e:
+        print(f"Error processing {url}: {str(e)}")
+        return None
+
+def download_latest_file(url, save_folder, file_prefix):
+    try:
+        latest_file_url = get_latest_file(url)
+        if not latest_file_url:
+            print(f"No suitable files found at {url}")
+            return None
+            
         # Download the file
         file_response = requests.get(latest_file_url)
         file_response.raise_for_status()
