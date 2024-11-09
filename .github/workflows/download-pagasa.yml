@@ -5,11 +5,11 @@ on:
 jobs:
   download:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          persist-credentials: false
         
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -24,8 +24,8 @@ jobs:
         run: |
           python codes/download_latest_pagasa.py
           
-      - name: Push changes
-        uses: ad-m/github-push-action@master
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          github_token: ${{ secrets.PAT }}
-          branch: ${{ github.ref }}
+          commit_message: Update PAGASA files
+          file_pattern: 'codes/latest_*'
