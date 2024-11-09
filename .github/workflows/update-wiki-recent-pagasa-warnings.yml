@@ -1,8 +1,8 @@
-name: Update Wiki with Latest Image/PDF
+name: Update Wiki with Latest Pagasa Info
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight
+    - cron: '0 2,5,8,11,14,17,20,23 * * *' # Runs every 2, 5, 8, 11, 2, 5, 8, 11 PM (Philippine Standard Time)
 
 jobs:
   update_wiki:
@@ -20,18 +20,30 @@ jobs:
         run: |
           pip install requests beautifulsoup4
 
-      - name: Get latest image/PDF
+      - name: Get latest image/PDF from URL 1
         run: |
-          python get_latest_image_pdf.py -u "<YOUR_TARGET_URL>" -o latest_media.txt
+          python get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/bulletin/>" -o latest_tcb.txt
+
+      - name: Get latest image/PDF from URL 2
+        run: |
+          python get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/tamss/weather/weather_advisory/>" -o latest_wa.txt
+
+      - name: Get latest image/PDF from URL 3
+        run: |
+          python get_latest_image_pdf.py -u "<https://pubfiles.pagasa.dost.gov.ph/climps/tcthreat/>" -o latest_tcthreat.txt
 
       - name: Update Wiki page
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const wikiPage = context.github.repos.getWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Media' });
-            const latestMedia = require('./latest_media.txt').toString();
-            const content = `## Latest Media
+            const wikiPage = context.github.repos.getWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Pagasa Info' });
+            const latestMedia1 = require('./latest_media_1.txt').toString();
+            const latestMedia2 = require('./latest_media_2.txt').toString();
+            const latestMedia3 = require('./latest_media_3.txt').toString();
+            const content = `## Latest Pagasa Info
 
-${latestMedia}`;
-            const updateWiki = context.github.repos.updateWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Media', content: content });
+**From URL 1:** ${latestMedia1}
+**From URL 2:** ${latestMedia2}
+**From URL 3:** ${latestMedia3}`;
+            const updateWiki = context.github.repos.updateWiki({ owner: context.repo.owner, repo: context.repo.repo, page: 'Latest Pagasa Info', content: content });
