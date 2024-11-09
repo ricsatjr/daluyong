@@ -4,40 +4,50 @@ import os
 from urllib.parse import urljoin
 from datetime import datetime
 
+def parse_date(date_str):
+    try:
+        return datetime.strptime(date_str.strip(), "%d-%b-%Y %H:%M")
+    except Exception as e:
+        print(f"Error parsing date {date_str}: {e}")
+        return None
+
 def get_latest_file(url):
     try:
-        print(f"Fetching from URL: {url}")
         response = requests.get(url)
         response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Find all links and their dates
+        # Get all links and their dates
         files_with_dates = []
         
-        # Debug: Print all found links
-        links = soup.find_all(['a', 'img'])
-        print(f"Found {len(links)} total links")
-        
-        for link in links:
-            file_url = link.get('href') or link.get('src')
-            if file_url and file_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.pdf')):
-                # Find parent row to get date
-                row = link.find_parent('tr')
-                if row:
-                    date_cell = row.find_all('td')[-1]  # Assuming last column is date
-                    if date_cell:
-                        date_str = date_cell.get_text().strip()
-                        print(f"Found file: {file_url} with date: {date_str}")
-                        files_with_dates.append((file_url, date_str))
+        # Process all link elements
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            # Skip parent directory link
+            if href == "../":
+                continue
+                
+            # Get the file and date from the text that follows the link
+            if href and (href.endswith('.pdf') or href.endswith('.png')):
+                # Get the text line containing this link
+                line_text = link.parent.get_text()
+                parts = line_text.split()
+                if len(parts) >= 2:
+                    # Date and time are typically the last parts before the file size
+                    date_str = f"{parts[-3]} {parts[-2]}"
+                    date = parse_date(date_str)
+                    if date:
+                        files_with_dates.append((href, date))
+                        print(f"Found file: {href} with date: {date}")
 
         if not files_with_dates:
-            print("No files found with dates")
+            print("No files with valid dates found")
             return None
 
-        # Sort by date and get the latest
-        latest_file = sorted(files_with_dates, key=lambda x: x[1])[-1][0]
-        print(f"Latest file selected: {latest_file}")
-        return urljoin(url, latest_file)
+        # Get the most recent file
+        latest_file = max(files_with_dates, key=lambda x: x[1])[0]
+        print(f"Selected latest file: {latest_file}")
+        return latest_file
 
     except Exception as e:
         print(f"Error in get_latest_file: {str(e)}")
@@ -45,30 +55,27 @@ def get_latest_file(url):
 
 def download_latest_file(url, save_folder, file_prefix):
     try:
-        latest_file_url = get_latest_file(url)
-        if not latest_file_url:
+        latest_file = get_latest_file(url)
+        if not latest_file:
             print(f"No suitable files found at {url}")
             return None
             
-        print(f"Downloading from: {latest_file_url}")
-        file_response = requests.get(latest_file_url)
-        file_response.raise_for_status()
+        full_url = urljoin(url, latest_file)
+        print(f"Downloading from: {full_url}")
         
-        # Create filename with prefix and original extension
-        extension = os.path.splitext(latest_file_url.split('/')[-1])[1]
+        response = requests.get(full_url)
+        response.raise_for_status()
+        
+        # Get the extension from the original file
+        extension = os.path.splitext(latest_file)[1]
         filename = f"{file_prefix}{extension}"
         filepath = os.path.join(save_folder, filename)
         
-        print(f"Saving to: {filepath}")
+        # Save the file
         with open(filepath, 'wb') as f:
-            f.write(file_response.content)
+            f.write(response.content)
         
-        # Verify file was created
-        if os.path.exists(filepath):
-            print(f"File successfully saved: {filepath} (Size: {os.path.getsize(filepath)} bytes)")
-        else:
-            print(f"Error: File not found after saving: {filepath}")
-            
+        print(f"Successfully saved to: {filepath}")
         return filepath
 
     except Exception as e:
@@ -87,7 +94,6 @@ def main():
     
     for url, prefix in urls.items():
         print(f"\nProcessing URL: {url}")
-        print(f"Using prefix: {prefix}")
         downloaded_file = download_latest_file(url, script_dir, prefix)
         if downloaded_file:
             print(f"Successfully processed {prefix}")
